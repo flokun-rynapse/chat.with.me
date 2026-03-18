@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>RYNAPSE - Chat With RP</title>
+<link rel="shortcut icon" href="Logo_2.png" type="image/x-icon">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: rgba(255, 180, 75);
+            --soft-bg: rgba(255,200,50); 
+            --chat-bubble-me: rgba(255,230,50);
+            --chat-bubble-you: #ffffff;
+            --text-color: #4a4a4a;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: var(--soft-bg); 
+            overflow: hidden; display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+        }
+
+        /* Login Screen */
+        #login-overlay { 
+            position: fixed; inset: 0; 
+            background: var(--soft-bg); 
+            z-index: 100; display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            transition: 0.5s; 
+        }
+        .login-card { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 25px; 
+            box-shadow: 8px 8px 15px rgba(205,150,00, 0.99);  
+            text-align: center; width: 300px; 
+        }
+        
+        /* Layout */
+        .chat-container { 
+            width: 95%; max-width: 400px; 
+            height: 85vh; 
+            background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); 
+            border-radius: 30px; 
+            box-shadow: 8px 8px 15px rgba(20, 20, 60, 0.9);
+            display: none; 
+            flex-direction: column; 
+            overflow: hidden; 
+            border: 2px solid white; 
+            position: relative; 
+            z-index: 10; 
+        }
+        .chat-header { 
+            padding: 20px; 
+            background: var(--primary-blue); 
+            color: white; 
+            text-align: center; 
+            font-weight: 600; 
+        }
+        #chat-box { 
+            flex: 1; 
+            padding: 20px; 
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column; gap: 12px; scrollbar-width: none; 
+        }
+        #chat-box::-webkit-scrollbar { 
+            display: none; 
+        }
+        
+        /* Messages */
+        .message { 
+            max-width: 80%; 
+            padding: 10px 15px; 
+            border-radius: 18px; 
+            font-size: 0.9rem; 
+            position: relative; 
+            word-wrap: break-word; 
+            cursor: pointer; 
+            animation: pop 0.3s ease; 
+        }
+        @keyframes pop { 
+            from { transform: scale(0.8); opacity: 0; } 
+            to { transform: scale(1); opacity: 1; } 
+        }
+        
+        .message.me { 
+            align-self: flex-end; 
+            background: var(--primary-blue); 
+            color: white; 
+            border-bottom-right-radius: 4px; 
+        }
+        .message.you { 
+            align-self: flex-start; 
+            background: white; 
+            color: var(--text-color); 
+            border-bottom-left-radius: 4px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+        }
+        .sender { 
+            font-size: 10px; 
+            font-weight: 600; 
+            display: block; 
+            margin-bottom: 2px; 
+            opacity: 0.8; 
+        }
+        
+        /* Inputs */
+        input { 
+            width: 100%; 
+            border: 1px solid #eee; 
+            padding: 12px; 
+            border-radius: 20px; 
+            outline: none; 
+            margin-bottom: 10px; 
+            font-family: 'Poppins'; 
+        }
+        .chat-input-area { 
+            padding: 15px; 
+            background: white; 
+            display: flex; gap: 10px; 
+            border-top: 1px solid #f0f0f0; 
+        }
+        button { 
+            background: var(--primary-blue); 
+            border: none; 
+            color: white; 
+            padding: 10px 20px; 
+            border-radius: 20px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            transition: 0.2s; 
+        }
+        button:active { 
+            transform: scale(0.95); 
+        }
+
+        .hearts-bg { 
+            position: fixed; inset: 0; 
+            pointer-events: none; 
+            z-index: 0; 
+        }
+        .heart { 
+            position: absolute; 
+            color: var(--primary-blue); 
+            animation: float 6s linear infinite; 
+            bottom: -50px; 
+        }
+        @keyframes float { 0% { 
+            transform: translateY(0); 
+            opacity: 1; } 100% { 
+                transform: translateY(-110vh); 
+                opacity: 0; } 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hearts-bg" id="hearts-container"></div>
+
+    <div id="login-overlay">
+        <div class="login-card">
+            <h2 style="color: var(--primary-blue); margin-bottom: 15px;">Login</h2><br>
+            <input type="password" id="pass-input" placeholder="Secret Code 🔑">
+            <input type="text" id="name-input" placeholder="Your Name ✨"><br><br>
+            <button onclick="checkAccess()">Join Chat</button>
+        </div>
+    </div>
+
+    <div class="chat-container" id="main-chat">
+        <div class="chat-header">🎀 Chat With Me 🎀</div>
+        <div id="chat-box"></div>
+        <div class="chat-input-area">
+            <input type="text" id="user-input" placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendMessage()">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+   <script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGXif5pLbIyfjn96EusPbDoJJmH3LgPigu-HXbSnNQ5IrgddL3vQsSh0vpHMlOEy7Z/exec";
+
+let userName = "";
+
+/* LOGIN */
+/* LOGIN */
+function checkAccess() {
+    const pass = document.getElementById('pass-input').value;
+    const nameInput = document.getElementById('name-input').value.trim();
+    
+    // List of forbidden names
+    const forbiddenNames = [
+        "Rynapse","rynapse","RYNAPSE","Flokun","flokun","FLOKUN","Clikture","clikture","CLIKTURE"
+    ];
+
+    // Check if the name (converted to lowercase) is in our forbidden list
+    const isForbidden = forbiddenNames.includes(nameInput.toLowerCase());
+
+    if (pass !== "1") {
+        alert("Incorrect Secret Code! 🔑");
+        return;
+    }
+
+    if (nameInput === "") {
+        alert("Please enter a name! ✨");
+        return;
+    }
+
+    if (isForbidden) {
+        alert("This name is Admin. Please choose another name! 🎀");
+        return;
+    }
+
+    // If all checks pass
+    userName = nameInput;
+    document.getElementById('login-overlay').style.display = 'none';
+    document.getElementById('main-chat').style.display = 'flex';
+
+    loadMessages();
+    setInterval(loadMessages, 3000);
+}
+
+/* LOAD MESSAGES */
+async function loadMessages() {
+    try {
+        const response = await fetch(SCRIPT_URL);
+        const data = await response.json();
+
+        const chatBox = document.getElementById('chat-box');
+        chatBox.innerHTML = "";
+
+        data.forEach(msg => {
+            if (!msg.message) return;
+
+            const isMe = msg.name === userName;
+
+            const div = document.createElement('div');
+            div.className = `message ${isMe ? 'me' : 'you'}`;
+
+            div.innerHTML = `
+                <span class="sender">${isMe ? 'Me' : msg.name}</span>
+                ${msg.message}
+            `;
+
+            if (isMe) {
+                div.onclick = () => deleteMsg(msg.id);
+            }
+
+            chatBox.appendChild(div);
+        });
+
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+    } catch (e) {
+        console.log("Fetch error:", e);
+    }
+}
+
+/* SEND MESSAGE */
+async function sendMessage() {
+    const input = document.getElementById('user-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    const msgId = 'm' + Date.now();
+    input.value = '';
+
+    const url = `${SCRIPT_URL}?action=add&id=${msgId}&name=${encodeURIComponent(userName)}&message=${encodeURIComponent(text)}`;
+
+    await fetch(url);
+
+    setTimeout(loadMessages, 500);
+}
+/* DELETE MESSAGE */
+async function deleteMsg(id) {
+    if (!confirm("Delete?")) return;
+
+    const url = `${SCRIPT_URL}?action=delete&id=${id}`;
+    await fetch(url);
+
+    setTimeout(loadMessages, 500);
+}
+
+/* HEART ANIMATION (UNCHANGED) */
+setInterval(() => {
+    const h = document.createElement('div');
+    h.className = 'heart';
+    h.innerHTML = '✨';
+    h.style.left = Math.random() * 100 + 'vw';
+    h.style.fontSize = (Math.random() * 10 + 15) + 'px';
+    document.getElementById('hearts-container').appendChild(h);
+    setTimeout(() => h.remove(), 6000);
+}, 200);
+</script>
+</body>
+</html>
