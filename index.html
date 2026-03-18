@@ -188,36 +188,50 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGXif5pLbIyfjn96Eus
 let userName = "";
 
 /* LOGIN */
-/* LOGIN */
 function checkAccess() {
     const pass = document.getElementById('pass-input').value;
     const nameInput = document.getElementById('name-input').value.trim();
-    
-    // List of forbidden names
+
     const forbiddenNames = [
-        "Rynapse","rynapse","RYNAPSE","Flokun","flokun","FLOKUN","Clikture","clikture","CLIKTURE"
+        "rynapse","flokun","clikture"
     ];
 
-    // Check if the name (converted to lowercase) is in our forbidden list
     const isForbidden = forbiddenNames.includes(nameInput.toLowerCase());
 
-    if (pass !== "1") {
+    // ❌ Normal users (password 1)
+    if (pass === "1331") {
+
+        if (nameInput === "") {
+            alert("Please enter a name! ✨");
+            return;
+        }
+
+        if (isForbidden) {
+            alert("This name is Admin. Please choose another name! 🎀");
+            return;
+        }
+
+        userName = nameInput;
+    }
+
+    else if (pass === "1809") {
+
+        if (nameInput === "") {
+            alert("Enter admin name! 🔑");
+            return;
+        }
+
+        // 🔥 Force it to act like forbidden/admin name
+        userName = nameInput;
+
+    }
+
+    else {
         alert("Incorrect Secret Code! 🔑");
         return;
     }
 
-    if (nameInput === "") {
-        alert("Please enter a name! ✨");
-        return;
-    }
-
-    if (isForbidden) {
-        alert("This name is Admin. Please choose another name! 🎀");
-        return;
-    }
-
-    // If all checks pass
-    userName = nameInput;
+    // LOGIN SUCCESS
     document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('main-chat').style.display = 'flex';
 
