@@ -178,60 +178,47 @@
         <div id="chat-box"></div>
         <div class="chat-input-area">
             <input type="text" id="user-input" placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendMessage()">
-            <button onclick="sendMessage()">Send</button>
+            <button id="send-btn" onclick="sendMessage()">Send</button>
         </div>
     </div>
 
    <script>
+
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGXif5pLbIyfjn96EusPbDoJJmH3LgPigu-HXbSnNQ5IrgddL3vQsSh0vpHMlOEy7Z/exec";
 
 let userName = "";
+let isSending = false;
 
-/* LOGIN */
 function checkAccess() {
     const pass = document.getElementById('pass-input').value;
     const nameInput = document.getElementById('name-input').value.trim();
 
-    const forbiddenNames = [
-        "rynapse","flokun","clikture"
-    ];
-
+    const forbiddenNames = ["rynapse","flokun","clikture"];
     const isForbidden = forbiddenNames.includes(nameInput.toLowerCase());
 
-    // ❌ Normal users (password 1)
     if (pass === "1331") {
-
         if (nameInput === "") {
             alert("Please enter a name! ✨");
             return;
         }
-
         if (isForbidden) {
             alert("This name is Admin. Please choose another name! 🎀");
             return;
         }
-
         userName = nameInput;
-    }
-
+    } 
     else if (pass === "1809") {
-
         if (nameInput === "") {
             alert("Enter admin name! 🔑");
             return;
         }
-
-        // 🔥 Force it to act like forbidden/admin name
         userName = nameInput;
-
-    }
-
+    } 
     else {
         alert("Incorrect Secret Code! 🔑");
         return;
     }
 
-    // LOGIN SUCCESS
     document.getElementById('login-overlay').style.display = 'none';
     document.getElementById('main-chat').style.display = 'flex';
 
@@ -246,6 +233,10 @@ async function loadMessages() {
         const data = await response.json();
 
         const chatBox = document.getElementById('chat-box');
+
+        // ✅ Detect if user is near bottom
+        const isNearBottom = chatBox.scrollHeight - chatBox.scrollTop <= chatBox.clientHeight + 50;
+
         chatBox.innerHTML = "";
 
         data.forEach(msg => {
@@ -268,7 +259,10 @@ async function loadMessages() {
             chatBox.appendChild(div);
         });
 
-        chatBox.scrollTop = chatBox.scrollHeight;
+        // ✅ Only auto-scroll if already near bottom
+        if (isNearBottom) {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
 
     } catch (e) {
         console.log("Fetch error:", e);
@@ -277,19 +271,35 @@ async function loadMessages() {
 
 /* SEND MESSAGE */
 async function sendMessage() {
+    if (isSending) return; // 🚫 prevent spam
+
     const input = document.getElementById('user-input');
+    const btn = document.getElementById('send-btn');
+
     const text = input.value.trim();
     if (!text) return;
+
+    isSending = true;
+    if (btn) btn.disabled = true;
 
     const msgId = 'm' + Date.now();
     input.value = '';
 
     const url = `${SCRIPT_URL}?action=add&id=${msgId}&name=${encodeURIComponent(userName)}&message=${encodeURIComponent(text)}`;
 
-    await fetch(url);
+    try {
+        await fetch(url);
+    } catch (e) {
+        console.log("Send error:", e);
+    }
 
-    setTimeout(loadMessages, 500);
+    setTimeout(() => {
+        loadMessages();
+        isSending = false;
+        if (btn) btn.disabled = false;
+    }, 500);
 }
+
 /* DELETE MESSAGE */
 async function deleteMsg(id) {
     if (!confirm("Delete?")) return;
